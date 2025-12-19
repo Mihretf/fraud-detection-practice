@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+env/
+
+# Kafka / Spark local files
+logs/
+tmp/
+
+# OS
+.DS_Store
+Thumbs.db
