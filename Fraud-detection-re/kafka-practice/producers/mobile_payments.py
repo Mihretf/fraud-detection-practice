@@ -16,6 +16,6 @@ while True:
         "amount": random.randint(10, 1000),
         "source": "mobile"
     }
-    producer.send("transactions", value=event)
+    producer.send("transactions_partitioned", value=event)
     print(f"Sent: {event}")
     time.sleep(1)

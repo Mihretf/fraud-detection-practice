@@ -1,7 +1,7 @@
 from kafka import KafkaConsumer
 import json
 
-TOPIC_NAME = "transactions"
+TOPIC_NAME = "transactions_partitioned"
 BOOTSTRAP_SERVERS = "localhost:9092"
 
 consumer = KafkaConsumer(
