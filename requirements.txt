@@ -1,0 +1,30 @@
+# Core Data Processing
+pyspark>=4.1.0
+py4j>=0.10.9.9
+
+# Kafka Integration
+kafka-python>=2.3.0
+
+# API Framework
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+
+# Data Manipulation
+pandas>=2.1.0
+pyarrow>=14.0.0
+numpy>=1.24.0
+
+# HTTP Client
+requests>=2.31.0
+
+# CORS Support (included with FastAPI)
+# fastapi-cors handled by fastapi.middleware.cors
+
+# Additional Utilities
+python-json-logger>=2.0.7
+
+# Development (Optional)
+pytest>=7.4.0
+black>=23.11.0
+flake8>=6.1.0
+

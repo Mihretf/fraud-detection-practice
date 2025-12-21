@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+myenv/
+*.pyc
+.venv/
+venv_spark/
+.env/
+
+# Spark/Hadoop
+checkpoint/
+derby.log
+metastore_db/
+
+# Docker
+.docker_volumes/
+
+#Dashboard/Node
+node_modules/
+dist/
+
+# System
+.DS_Store
+hosts_backup
