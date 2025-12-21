@@ -1,53 +1,64 @@
+import pandas as pd
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import pandas as pd
 
 app = FastAPI()
 
-# Enable CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# CHANGED: Use webhdfs protocol and port 9870
-# Note: 'host.docker.internal' or 'localhost' works here
-HDFS_PATH_ALL = "webhdfs://localhost:9870/data/raw/transactions"
-HDFS_PATH_FRAUD = "webhdfs://localhost:9870/data/processed/fraud"
+# --- LIVE DATA STORAGE (In-Memory) ---
+# In a real app, this would be Redis, but a list works for practice!
+live_alerts = []
+live_stats = {"total_volume": 0, "fraud_count": 0}
 
-def read_hdfs_data(path):
-    try:
-        # Use storage_options to specify the user (important for permissions)
-        # engine='pyarrow' is fine, but it will now use fsspec for the connection
-        df = pd.read_parquet(path, engine='pyarrow', storage_options={"user": "root"})
-        return df
-    except Exception as e:
-        print(f"Error reading {path}: {e}")
-        return pd.DataFrame()
+HDFS_BATCH_PATH = "webhdfs://localhost:9870/data/reports/daily_velocity_alerts"
 
+# 1. NEW ENDPOINT: This is where your LIVE STREAMING script sends data
+@app.post("/api/live-event")
+async def receive_live_event(event: dict):
+    global live_stats
+    # Add to the list of recent fraud
+    live_alerts.insert(0, event) 
+    if len(live_alerts) > 10: live_alerts.pop() # Keep only latest 10
+    
+    # Update rolling counters
+    live_stats["total_volume"] += event.get("amount", 0)
+    live_stats["fraud_count"] += 1
+    return {"status": "received"}
+
+# 2. UPDATED STATS: Now it returns the real live data instead of zeros
 @app.get("/api/stats")
 async def get_stats():
-    df_all = read_hdfs_data(HDFS_PATH_ALL)
-    df_fraud = read_hdfs_data(HDFS_PATH_FRAUD)
-    
-    if df_all.empty:
-        return {"error": "No data found in HDFS or connection failed"}
-
-    total_transactions = len(df_all)
-    fraud_count = len(df_fraud)
-    
     return {
         "summary": {
-            "total_count": total_transactions,
-            "fraud_count": fraud_count,
-            "fraud_rate": f"{(fraud_count/total_transactions)*100:.2f}%" if total_transactions > 0 else "0%",
-            "total_volume": round(float(df_all['amount'].sum()), 2),
-            "fraud_volume": round(float(df_fraud['amount'].sum()), 2) if not df_fraud.empty else 0
+            "total_volume": live_stats["total_volume"],
+            "fraud_rate": f"{(live_stats['fraud_count'] / 100):.1%}" if live_stats["fraud_count"] > 0 else "0%",
+            "fraud_count": live_stats["fraud_count"]
         },
-        "recent_fraud": df_fraud.tail(10).to_dict(orient="records") if not df_fraud.empty else []
+        "recent_fraud": live_alerts
     }
+
+# 3. BATCH REPORT: (Your working HDFS logic)
+@app.get("/api/batch-report")
+async def get_batch_report():
+    try:
+        df = pd.read_parquet(
+            HDFS_BATCH_PATH, 
+            engine='pyarrow', 
+            storage_options={"user": "Barney"}
+        )
+        alerts = df.to_dict(orient="records")
+        return {"alerts": alerts}
+    except Exception as e:
+        print(f"❌ HDFS Connection Error: {e}")
+        return {"alerts": []}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
