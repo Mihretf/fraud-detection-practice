@@ -1,4 +1,6 @@
 import os
+import requests
+import json
 # Set HADOOP_USER_NAME to root for HDFS permissions inside Docker
 os.environ['HADOOP_USER_NAME'] = 'root'
 
@@ -65,6 +67,17 @@ processed_df = enriched_df.withColumn(
         .otherwise(((col("amount") - col("avg_amount")) / col("std_dev")) > 3.0)
     )
 )
+def send_to_api(batch_df, batch_id):
+    # Convert the Spark Batch to a list of Python dictionaries
+    rows = batch_df.collect()
+    for row in rows:
+        # Convert row to dict
+        payload = row.asDict()
+        try:
+            # IMPORTANT: Use the Docker service name 'backend-api'
+            requests.post("http://backend-api:8000/api/live-event", json=payload, timeout=1)
+        except Exception as e:
+            print(f"API Connection Error: {e}")
 
 # 6. WRITE SINK 1: Raw Ingestion
 query_all = processed_df.writeStream \
@@ -81,6 +94,12 @@ query_fraud = processed_df.filter(col("is_fraud") == True) \
     .option("path", "hdfs://namenode:9000/data/processed/fraud") \
     .option("checkpointLocation", "hdfs://namenode:9000/checkpoints/fraud_data") \
     .outputMode("append") \
+    .start()
+
+# 8. WRITE SINK 3: Send to Live Dashboard via API
+query_live_api = processed_df.filter(col("is_fraud") == True) \
+    .writeStream \
+    .foreachBatch(send_to_api) \
     .start()
 
 print("Streaming System is Live. Writing to HDFS...")

@@ -60,7 +60,15 @@ services:
     ports:
       - "9864:9864"
       - "9866:9866"
-
+  backend-api:
+    build: ./spark-streaming-practice/kafka_stream/backend_api
+    container_name: backend-api
+    ports:
+      - "8000:8000"
+    environment:
+      - HDFS_NAMENODE=namenode
+    depends_on:
+      - namenode
   # --- SPARK STACK ---
   spark-master:
     image: apache/spark:3.5.0
