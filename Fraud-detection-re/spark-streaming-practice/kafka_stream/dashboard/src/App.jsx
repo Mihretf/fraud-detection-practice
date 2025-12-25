@@ -1,9 +1,10 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import { ShieldAlert, LayoutDashboard, Map as MapIcon, Users } from 'lucide-react';
+import { ShieldAlert, LayoutDashboard, Map as MapIcon, Users, History } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Intel from './pages/Intel';
 import MapView from './pages/MapView';
+import Audit from './pages/Audit'; // Make sure you created this file!
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
             <NavLink to="/" icon={<LayoutDashboard size={20}/>} label="Dashboard" />
             <NavLink to="/map" icon={<MapIcon size={20}/>} label="Live Map" />
             <NavLink to="/intel" icon={<Users size={20}/>} label="User Intelligence" />
+            <NavLink to="/audit" icon={<History size={20}/>} label="Fraud Audit" />
           </div>
         </nav>
 
@@ -29,6 +31,7 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/map" element={<MapView />} />
             <Route path="/intel" element={<Intel />} />
+            <Route path="/audit" element={<Audit />} />
           </Routes>
         </main>
       </div>
@@ -43,3 +46,4 @@ const NavLink = ({ to, icon, label }) => (
 );
 
 export default App;
+
